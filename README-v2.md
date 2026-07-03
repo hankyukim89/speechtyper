@@ -6,8 +6,21 @@ onboarding, translation, custom dictionary, history, and licensing.
 
 ## Run it
 
-- **macOS:** double-click `run.command`
-- **Windows:** double-click `run.bat`
+- **macOS (no Terminal window):** build once with
+  `./packaging/build_macos.sh`, then double-click `dist/SpeechTyper.app`
+- **Windows (no console window):** double-click `SpeechTyper.vbs`
+
+`run.command` is the visible macOS developer launcher; `.command` files are
+always opened by Terminal. The built `.app` is the professional launcher and
+does not open Terminal. On Windows, `SpeechTyper.vbs` creates the virtual
+environment on first run and starts the app through `pythonw`, with its
+console hidden. Startup errors are logged to
+`%LOCALAPPDATA%\SpeechTyper\launcher.log`; the visible `run.bat` remains
+available for troubleshooting.
+
+For customer distribution, use the packaged `SpeechTyper.dmg` and
+`SpeechTyperSetup.exe` described below. Those builds are self-contained and
+also launch without a terminal or console window.
 
 First run creates a virtualenv, installs dependencies, and walks you
 through the 5-step setup (sign-in, permissions, model download, try-it).

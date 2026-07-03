@@ -1,23 +1,31 @@
-# PyInstaller spec — build with:  pyinstaller packaging/speechtyper.spec
+# PyInstaller spec — build with: pyinstaller packaging/speechtyper.spec
 # --onedir on purpose: onefile is slow to start with CTranslate2.
+import os
 import sys
+from pathlib import Path
+
 from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
+ROOT = Path(SPECPATH).parent
 
-datas = [("../speechtyper/assets", "speechtyper/assets")]
+datas = [(str(ROOT / "speechtyper" / "assets"), "speechtyper/assets")]
 binaries, hiddenimports = [], []
 for pkg in ("faster_whisper", "ctranslate2", "tokenizers"):
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
 
+pynput_platform = "_darwin" if sys.platform == "darwin" else "_win32"
+
 a = Analysis(
-    ["../speechtyper/__main__.py"],
-    pathex=[".."],
+    [str(ROOT / "packaging" / "entrypoint.py")],
+    pathex=[str(ROOT)],
     binaries=binaries,
     datas=datas,
-    hiddenimports=hiddenimports + ["pynput.keyboard._darwin", "pynput.mouse._darwin",
-                                   "pynput.keyboard._win32", "pynput.mouse._win32"],
+    hiddenimports=hiddenimports + [
+        f"pynput.keyboard.{pynput_platform}",
+        f"pynput.mouse.{pynput_platform}",
+    ],
     hookspath=[],
     excludes=["tkinter"],
     cipher=block_cipher,
@@ -38,7 +46,11 @@ if sys.platform == "darwin":
         coll,
         name="SpeechTyper.app",
         bundle_identifier="com.speechtyper.app",
+        codesign_identity=os.environ.get("SIGN_ID") or None,
+        entitlements_file=str(ROOT / "packaging" / "entitlements.plist"),
         info_plist={
+            "CFBundleShortVersionString": "2.0.0",
+            "CFBundleVersion": "2.0.0",
             "LSUIElement": True,  # menu-bar app, no Dock icon
             "NSMicrophoneUsageDescription":
                 "SpeechTyper listens while you hold the push-to-talk key.",

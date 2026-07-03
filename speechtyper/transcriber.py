@@ -45,11 +45,15 @@ class Transcriber:
         """Blocks until model ready. audio: float32 mono 16 kHz.
         task="translate" makes Whisper output English directly (free, offline).
         initial_prompt biases decoding toward the user's dictionary words."""
-        self._ready.wait()
         if audio.size < 1600:  # under 0.1 s — ignore taps
             return ""
+        # set_model() may clear the model between wait() and use; retry
+        model = None
+        while model is None:
+            self._ready.wait()
+            model = self._model
         language = languages[0] if len(languages) == 1 else None
-        segments, _info = self._model.transcribe(
+        segments, _info = model.transcribe(
             audio,
             language=language,
             task=task,

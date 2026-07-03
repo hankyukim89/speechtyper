@@ -1,9 +1,9 @@
 """Reusable widgets matching the v2 design: toggle, chips, keycap, buttons."""
-from PySide6.QtCore import (Property, QEasingCurve, QPropertyAnimation, Qt,
-                            Signal)
+from PySide6.QtCore import (Property, QEasingCurve, QPoint, QPropertyAnimation,
+                            QRect, QSize, Qt, Signal)
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
-                               QWidget)
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
+                               QPushButton, QWidget)
 
 from . import theme
 
@@ -186,6 +186,67 @@ class Segmented(QWidget):
 
     def index(self):
         return self._index
+
+
+class FlowLayout(QLayout):
+    """Left-to-right layout that wraps to a new line when the row is full.
+    Keeps the language chips inside the fixed 400px window."""
+
+    def __init__(self, parent=None, hspacing=6, vspacing=8):
+        super().__init__(parent)
+        self._items = []
+        self._h = hspacing
+        self._v = vspacing
+        self.setContentsMargins(0, 0, 0, 0)
+
+    def addItem(self, item):
+        self._items.append(item)
+
+    def count(self):
+        return len(self._items)
+
+    def itemAt(self, i):
+        return self._items[i] if 0 <= i < len(self._items) else None
+
+    def takeAt(self, i):
+        return self._items.pop(i) if 0 <= i < len(self._items) else None
+
+    def expandingDirections(self):
+        return Qt.Orientations(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        return self._layout(QRect(0, 0, width, 0), test=True)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self._layout(rect, test=False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+        for item in self._items:
+            size = size.expandedTo(item.minimumSize())
+        m = self.contentsMargins()
+        return size + QSize(m.left() + m.right(), m.top() + m.bottom())
+
+    def _layout(self, rect, test):
+        x, y, row_h = rect.x(), rect.y(), 0
+        for item in self._items:
+            hint = item.sizeHint()
+            if x > rect.x() and x + hint.width() > rect.right():
+                x = rect.x()
+                y += row_h + self._v
+                row_h = 0
+            if not test:
+                item.setGeometry(QRect(QPoint(x, y), hint))
+            x += hint.width() + self._h
+            row_h = max(row_h, hint.height())
+        return y + row_h - rect.y()
 
 
 def section_label(text) -> QLabel:

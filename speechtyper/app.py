@@ -14,7 +14,8 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from . import config, dictionary, history, sounds, translate
 from .account import Account
 from .formatter import format_text
-from .hotkey import HotkeyListener, accessibility_is_granted
+from .hotkey import (HotkeyListener, accessibility_is_granted,
+                     request_accessibility_permission)
 from .injector import deliver
 from .mute import Muter
 from .recorder import Recorder
@@ -266,14 +267,34 @@ class App:
         )
         box.setStandardButtons(QMessageBox.Open | QMessageBox.Cancel)
         if box.exec() == QMessageBox.Open:
-            try:
-                subprocess.Popen([
-                    "open",
-                    "x-apple.systempreferences:com.apple.preference.security"
-                    "?Privacy_Accessibility",
-                ])
-            except Exception:
-                pass
+            self.request_accessibility_access()
+
+    def request_accessibility_access(self):
+        """Register this build with macOS, then open its Accessibility pane.
+
+        Opening System Settings alone is not enough after an app rebuild: the
+        current signed executable may not exist in the privacy list yet.
+        AXIsProcessTrustedWithOptions registers/prompts for this exact build.
+        """
+        if sys.platform != "darwin":
+            return
+        if accessibility_is_granted():
+            self._poll_accessibility()
+            return
+
+        request_accessibility_permission()
+        if accessibility_is_granted():
+            self._poll_accessibility()
+            return
+
+        try:
+            subprocess.Popen([
+                "open",
+                "x-apple.systempreferences:com.apple.preference.security"
+                "?Privacy_Accessibility",
+            ])
+        except Exception:
+            pass
 
     def _poll_accessibility(self):
         if not self._waiting_for_accessibility:

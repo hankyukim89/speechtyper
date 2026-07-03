@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeechTyper — Hold a key, speak, it types</title>
+<meta name="description" content="Offline dictation for Mac and Windows. Hold a key, speak, release — your words are typed into any app. Private: nothing leaves your computer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfbfc; --text: #17171b; --text2: #55555e; --muted: #8a8a94;
+    --accent: #4f46e5; --accent-hover: #4338ca; --border: #e4e4e9;
+    --tint: #eef2ff; --tint-border: #c7d2fe; --green: #16a34a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Instrument Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 22px 0; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; }
+  .logo svg { width: 22px; height: 22px; }
+  nav a { color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500; margin-left: 22px; }
+  nav a:hover { color: var(--accent); }
+  .hero { text-align: center; padding: 72px 0 56px; }
+  .hero h1 { font-size: 46px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  .key { display: inline-block; background: #fff; border: 1px solid var(--border); border-bottom-width: 3px; border-radius: 10px; padding: 2px 18px; color: var(--accent); font-weight: 600; }
+  .hero p { font-size: 18px; color: var(--text2); margin: 18px auto 0; max-width: 560px; }
+  .cta { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; transition: background .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: #f4f4f6; }
+  .cta-note { margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 30px 0 60px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+  .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card p { font-size: 14px; color: var(--text2); }
+  .section-title { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; padding-top: 24px; }
+  .section-sub { text-align: center; color: var(--text2); margin-top: 8px; font-size: 15px; }
+  .pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding: 34px 0 70px; max-width: 640px; margin: 0 auto; }
+  .plan { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 28px; text-align: center; position: relative; }
+  .plan.best { border: 2px solid var(--accent); }
+  .badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .05em; padding: 3px 12px; border-radius: 10px; }
+  .plan h3 { font-size: 16px; font-weight: 600; }
+  .price { font-size: 40px; font-weight: 700; margin: 10px 0 2px; }
+  .price span { font-size: 15px; color: var(--muted); font-weight: 400; }
+  .plan ul { list-style: none; padding: 14px 0 20px; font-size: 14px; color: var(--text2); }
+  .plan li { padding: 3px 0; }
+  .plan .btn { width: 100%; justify-content: center; }
+  footer { border-top: 1px solid var(--border); padding: 26px 0 40px; text-align: center; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--text2); }
+  @media (max-width: 600px) { .hero h1 { font-size: 32px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4"/></svg>
+      SpeechTyper
+    </div>
+    <nav><a href="#pricing">Pricing</a><a href="#download">Download</a></nav>
+  </header>
+
+  <section class="hero">
+    <h1>Hold <span class="key">⌥</span>, speak,<br>and it's typed. Anywhere.</h1>
+    <p>Fast, private dictation for Mac and Windows. Your voice never leaves
+       your computer — transcription runs fully offline.</p>
+    <div class="cta" id="download">
+      <a class="btn btn-primary" href="https://github.com/hankyukim89/speechtyper/releases/latest/download/SpeechTyper.dmg">↓&nbsp; Download for Mac</a>
+      <a class="btn btn-ghost" href="https://github.com/hankyukim89/speechtyper/releases/latest/download/SpeechTyperSetup.exe">↓&nbsp; Download for Windows</a>
+    </div>
+    <div class="cta-note">7-day free trial · No card required · macOS 13+ / Windows 10+</div>
+  </section>
+
+  <section class="features">
+    <div class="card"><h3>Works in every app</h3><p>Email, docs, chat, code — if your cursor blinks there, SpeechTyper types there. No switching windows.</p></div>
+    <div class="card"><h3>100% offline &amp; private</h3><p>Speech recognition runs on your machine. No audio is uploaded, ever. Works on a plane.</p></div>
+    <div class="card"><h3>Speak 99 languages</h3><p>Dictate in your language — or turn on translation and speak one language while it types another.</p></div>
+    <div class="card"><h3>Your words, spelled right</h3><p>Teach it names and jargon once with the custom dictionary and it never mishears them again.</p></div>
+  </section>
+
+  <h2 class="section-title" id="pricing">Simple pricing</h2>
+  <p class="section-sub">Try everything free for 7 days. Keep it if you love it.</p>
+  <section class="pricing">
+    <div class="plan best">
+      <div class="badge">MOST POPULAR</div>
+      <h3>Pro — yearly</h3>
+      <div class="price">$49<span>/year</span></div>
+      <ul><li>Unlimited dictation</li><li>All 99 languages + translation</li><li>Custom dictionary &amp; history</li><li>Mac and Windows</li></ul>
+      <a class="btn btn-primary" href="https://buy.stripe.com/REPLACE_yearly">Get Pro yearly</a>
+    </div>
+    <div class="plan">
+      <h3>Pro — lifetime</h3>
+      <div class="price">$99<span> once</span></div>
+      <ul><li>Everything in Pro</li><li>Pay once, yours forever</li><li>All future updates</li><li>&nbsp;</li></ul>
+      <a class="btn btn-ghost" href="https://buy.stripe.com/REPLACE_lifetime">Buy lifetime</a>
+    </div>
+  </section>
+
+  <footer>
+    SpeechTyper © 2026 · <a href="mailto:hankyukim89@gmail.com">Support</a> ·
+    Runs on your computer — compare at $144/year elsewhere.
+  </footer>
+</div>
+</body>
+</html>

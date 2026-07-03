@@ -9,13 +9,26 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLineEdit,
 
 from .. import config, history, translate
 from . import theme
-from .widgets import (Chip, GhostButton, Keycap, LinkLabel, PrimaryButton,
-                      Segmented, Toggle, divider, label, section_label)
+from .widgets import (Chip, FlowLayout, GhostButton, Keycap, LinkLabel,
+                      PrimaryButton, Segmented, Toggle, divider, label,
+                      section_label)
 
 INPUT_QSS = (
     f"QLineEdit {{ font-family: '{theme.FAMILY}'; font-size: 14px;"
     f" color: {theme.TEXT}; background: #ffffff; border: 1px solid"
     f" {theme.BORDER_INPUT}; border-radius: 8px; padding: 10px 12px; }}"
+)
+
+# Dropdown list styling shared by every combobox (language picker, mic).
+COMBO_POPUP_QSS = (
+    f"QComboBox QAbstractItemView {{ font-family: '{theme.FAMILY}';"
+    f" font-size: 13px; color: {theme.TEXT}; background: #ffffff;"
+    f" border: 1px solid {theme.BORDER_INPUT}; border-radius: 8px;"
+    " padding: 4px; outline: 0; }"
+    " QComboBox QAbstractItemView::item { padding: 7px 10px;"
+    " border-radius: 6px; }"
+    " QComboBox QAbstractItemView::item:selected {"
+    f" background: {theme.TINT_BG}; color: {theme.ACCENT}; }}"
 )
 
 
@@ -70,7 +83,9 @@ class MainWindow(QWidget):
             f"background: {theme.GREEN}; border-radius: 3px;")
         hl.addWidget(self.status_dot)
         hl.addSpacing(2)
-        self.status_label = label("Ready", 13, theme.TEXT_2)
+        self.status_label = LinkLabel("Ready", theme.TEXT_2, 13, 400)
+        self.status_label.setCursor(Qt.ArrowCursor)
+        self.status_label.clicked.connect(self._status_clicked)
         hl.addWidget(self.status_label)
         root.addWidget(head)
         root.addWidget(divider())
@@ -88,6 +103,15 @@ class MainWindow(QWidget):
         self.status_label.setText(text)
         self.status_dot.setStyleSheet(
             f"background: {color}; border-radius: 3px;")
+        needs_permission = text == "Permission needed"
+        self.status_label.setCursor(
+            Qt.PointingHandCursor if needs_permission else Qt.ArrowCursor)
+        self.status_label.setToolTip(
+            "Open Accessibility settings" if needs_permission else "")
+
+    def _status_clicked(self):
+        if self.status_label.text() == "Permission needed":
+            self.ctrl.request_accessibility_access()
 
     def _page(self, name):
         w = QWidget()
@@ -408,11 +432,12 @@ class MainWindow(QWidget):
         lay.addLayout(key_row)
 
         # languages I speak
-        lay.addSpacing(18)
+        lay.addSpacing(16)
+        lay.addWidget(divider())
+        lay.addSpacing(16)
         lay.addWidget(section_label("Languages I speak"))
         lay.addSpacing(8)
-        chips = QHBoxLayout()
-        chips.setSpacing(6)
+        chips = FlowLayout(hspacing=6, vspacing=8)
         for code in self.cfg.get("languages", ["en"]):
             name = config.LANG_NAMES.get(code, code).split()[-1]
             c = Chip(f"{name} ×", True)
@@ -423,21 +448,24 @@ class MainWindow(QWidget):
             f"QComboBox {{ font-family: '{theme.FAMILY}'; font-size: 13px;"
             f" font-weight: 500; color: {theme.TEXT_2}; background: #ffffff;"
             f" border: 1px solid {theme.BORDER_INPUT}; border-radius: 13px;"
-            f" padding: 5px 12px; }}")
+            f" padding: 5px 12px; }}" + COMBO_POPUP_QSS)
         self._lang_picker.addItem("+ Add")
         for code, name in config.LANGUAGES:
             if code not in self.cfg.get("languages", []):
                 self._lang_picker.addItem(name, code)
         self._lang_picker.activated.connect(self._add_lang)
         chips.addWidget(self._lang_picker)
-        chips.addStretch(1)
-        lay.addLayout(chips)
+        chip_host = QWidget()
+        chip_host.setLayout(chips)
+        lay.addWidget(chip_host)
         lay.addSpacing(6)
         lay.addWidget(label("One language is fastest. Several switch "
                             "automatically.", 12, theme.TEXT_MUTED))
 
         # style
-        lay.addSpacing(18)
+        lay.addSpacing(16)
+        lay.addWidget(divider())
+        lay.addSpacing(16)
         lay.addWidget(section_label("Style"))
         lay.addSpacing(8)
         style = Segmented(["Sentences", "lowercase, no punctuation"],
@@ -446,14 +474,17 @@ class MainWindow(QWidget):
         lay.addWidget(style)
 
         # microphone
-        lay.addSpacing(18)
+        lay.addSpacing(16)
+        lay.addWidget(divider())
+        lay.addSpacing(16)
         lay.addWidget(section_label("Microphone"))
         lay.addSpacing(8)
         self._mic = QComboBox()
         self._mic.setStyleSheet(
             f"QComboBox {{ font-family: '{theme.FAMILY}'; font-size: 14px;"
             f" color: {theme.TEXT}; background: #ffffff; border: 1px solid"
-            f" {theme.BORDER_INPUT}; border-radius: 8px; padding: 10px 12px; }}")
+            f" {theme.BORDER_INPUT}; border-radius: 8px; padding: 10px 12px; }}"
+            + COMBO_POPUP_QSS)
         self._mic.addItem("System default", None)
         for idx, name in self.ctrl.list_devices():
             self._mic.addItem(name, idx)
@@ -464,7 +495,9 @@ class MainWindow(QWidget):
         lay.addWidget(self._mic)
 
         # accuracy
-        lay.addSpacing(18)
+        lay.addSpacing(16)
+        lay.addWidget(divider())
+        lay.addSpacing(16)
         lay.addWidget(section_label("Accuracy"))
         lay.addSpacing(8)
         acc = Segmented(["Fast", "More accurate"],

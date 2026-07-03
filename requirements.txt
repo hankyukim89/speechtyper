@@ -1,0 +1,12 @@
+PySide6>=6.6
+faster-whisper>=1.0
+sounddevice>=0.4.6
+numpy
+pynput>=1.7.6
+pyperclip>=1.8
+pyobjc-framework-Cocoa; sys_platform == "darwin"
+pyobjc-framework-ApplicationServices; sys_platform == "darwin"
+pycaw; sys_platform == "win32"
+comtypes; sys_platform == "win32"
+# optional: offline translation to non-English targets
+# argostranslate>=1.9

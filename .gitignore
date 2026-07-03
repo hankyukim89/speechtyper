@@ -1,0 +1,19 @@
+.DS_Store
+.claude/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Build and packaging output
+build/
+dist/
+*.dmg
+*.exe
+
+# Local runtime data and secrets
+.env
+.env.*
+settings.json
+history.json
+entitlement.json
+.instance

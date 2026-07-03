@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body { margin: 0; background: #dfe0e6; } * { box-sizing: border-box; }</style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; gap: 40px; padding: 48px 40px; font-family: 'Instrument Sans', sans-serif; flex-wrap: wrap;">
+
+  <!-- ======================= ONBOARDING WINDOW ======================= -->
+  <sc-if value="{{ showOnboarding }}" hint-placeholder-val="{{ true }}">
+  <div style="width: 460px; background: #fbfbfc; border: 1px solid #e4e4e9; border-radius: 12px; box-shadow: 0 24px 64px rgba(23,23,27,0.14); overflow: hidden;" data-screen-label="Onboarding">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #ececf0;">
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="flex: 1; text-align: center; font-size: 12px; color: #9a9aa2;">SpeechTyper Setup</span>
+      <span style="width: 55px;"></span>
+    </div>
+
+    <!-- progress dots -->
+    <div style="display: flex; justify-content: center; gap: 8px; padding: 20px 0 0 0;">
+      <sc-for list="{{ obDots }}" as="d" hint-placeholder-count="5">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ d.color }};"></span>
+      </sc-for>
+    </div>
+
+    <!-- step 0: welcome -->
+    <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 36px 44px 40px 44px; text-align: center;">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" style="margin-bottom: 18px;"><rect x="9" y="3" width="6" height="11" rx="3" fill="#4353c8"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0" stroke="#4353c8" stroke-width="2" stroke-linecap="round"></path><path d="M12 17.5V21" stroke="#4353c8" stroke-width="2" stroke-linecap="round"></path></svg>
+        <div style="font-size: 26px; font-weight: 700; color: #17171b; letter-spacing: -0.01em;">Welcome to SpeechTyper</div>
+        <div style="font-size: 15px; color: #66666e; margin-top: 10px; line-height: 1.55;">Hold a key, speak, and your words are typed into any app. Everything runs on your computer — no internet needed after setup.</div>
+        <div onClick="{{ obNext }}" style="margin-top: 28px; background: #4353c8; color: #fff; font-size: 16px; font-weight: 600; padding: 13px 0; border-radius: 8px; cursor: pointer;" style-hover="background: #3a49b5;">Get started</div>
+        <div style="font-size: 13px; color: #9a9aa2; margin-top: 14px;">Takes about a minute</div>
+      </div>
+    </sc-if>
+
+    <!-- step 1: sign in -->
+    <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 32px 44px 36px 44px;">
+        <div style="font-size: 22px; font-weight: 700; color: #17171b; text-align: center;">Sign in</div>
+        <div style="font-size: 14px; color: #66666e; text-align: center; margin-top: 6px;">Your license is tied to your account.</div>
+        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
+          <div onClick="{{ obNext }}" style="display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #d6d6de; border-radius: 8px; padding: 12px 0; font-size: 15px; font-weight: 500; color: #17171b; cursor: pointer; background: #fff;" style-hover="background: #f4f4f7;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.3H12v4.5h6a5.1 5.1 0 0 1-2.2 3.4v2.8h3.6c2.1-2 3.2-4.9 3.2-8.4Z"></path><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.6H2.1v2.9A11 11 0 0 0 12 23Z"></path><path fill="#FBBC05" d="M5.8 14a6.6 6.6 0 0 1 0-4.2V6.9H2.1a11 11 0 0 0 0 10l3.7-2.9Z"></path><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 6.9L5.8 9.8c.9-2.7 3.3-4.4 6.2-4.4Z"></path></svg>
+            Continue with Google
+          </div>
+          <input placeholder="Email address" style="border: 1px solid #d6d6de; border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; color: #17171b; background: #fff; outline: none;">
+          <div onClick="{{ obNext }}" style="background: #17171b; color: #fff; text-align: center; font-size: 15px; font-weight: 600; padding: 12px 0; border-radius: 8px; cursor: pointer;">Continue with email</div>
+        </div>
+        <div style="font-size: 13px; color: #9a9aa2; text-align: center; margin-top: 18px;">7-day free trial. No card required.</div>
+      </div>
+    </sc-if>
+
+    <!-- step 2: permissions -->
+    <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 32px 44px 36px 44px;">
+        <div style="font-size: 22px; font-weight: 700; color: #17171b; text-align: center;">Two permissions</div>
+        <div style="font-size: 14px; color: #66666e; text-align: center; margin-top: 6px;">So SpeechTyper can hear you and type for you.</div>
+        <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 14px; border: 1px solid #e4e4e9; border-radius: 10px; padding: 14px 16px; background: #fff;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="#4353c8" stroke-width="1.8"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="#4353c8" stroke-width="1.8" stroke-linecap="round"></path></svg>
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 600; color: #17171b;">Microphone</div>
+              <div style="font-size: 13px; color: #66666e;">To hear what you say</div>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; color: #2fa36b;">Granted</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px; border: 1px solid #e4e4e9; border-radius: 10px; padding: 14px 16px; background: #fff;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#4353c8" stroke-width="1.8"></rect><path d="M7 15h6" stroke="#4353c8" stroke-width="1.8" stroke-linecap="round"></path></svg>
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 600; color: #17171b;">Keyboard access</div>
+              <div style="font-size: 13px; color: #66666e;">To type text for you</div>
+            </div>
+            <span onClick="{{ obNext }}" style="font-size: 13px; font-weight: 600; color: #fff; background: #4353c8; padding: 7px 14px; border-radius: 6px; cursor: pointer;">Allow</span>
+          </div>
+        </div>
+        <div style="font-size: 13px; color: #9a9aa2; text-align: center; margin-top: 18px; line-height: 1.5;">On a Mac this opens System Settings — flip the switch next to SpeechTyper and come back.</div>
+      </div>
+    </sc-if>
+
+    <!-- step 3: model download -->
+    <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 32px 44px 36px 44px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: #17171b;">Downloading speech model</div>
+        <div style="font-size: 14px; color: #66666e; margin-top: 6px;">One time only, about 150 MB. After this, SpeechTyper works fully offline.</div>
+        <div style="margin-top: 28px; height: 8px; background: #ececf0; border-radius: 999px; overflow: hidden;">
+          <div style="width: {{ dlPct }}%; height: 100%; background: #4353c8; border-radius: 999px; transition: width 0.3s;"></div>
+        </div>
+        <div style="font-size: 13px; color: #9a9aa2; margin-top: 10px;">{{ dlLabel }}</div>
+        <sc-if value="{{ dlDone }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ obNext }}" style="margin-top: 24px; background: #4353c8; color: #fff; font-size: 16px; font-weight: 600; padding: 13px 0; border-radius: 8px; cursor: pointer;">Continue</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- step 4: try it -->
+    <sc-if value="{{ ob4 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 32px 44px 36px 44px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: #17171b;">Try it now</div>
+        <div style="font-size: 15px; color: #66666e; margin-top: 8px; line-height: 1.55;">Hold <span style="display: inline-block; border: 1px solid #d6d6de; border-bottom-width: 2px; border-radius: 6px; padding: 1px 10px; background: #fff; color: #4353c8; font-weight: 600;">Right Alt</span>, say “hello world”, release.</div>
+        <div style="margin-top: 20px; border: 1px dashed #d6d6de; border-radius: 10px; padding: 18px; background: #fff; font-size: 16px; color: {{ tryColor }}; min-height: 24px;">{{ tryText }}</div>
+        <div onClick="{{ trySim }}" style="margin-top: 14px; display: inline-block; border: 1px solid #d6d6de; border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 500; color: #17171b; cursor: pointer; background: #fff;" style-hover="background: #f4f4f7;">Simulate holding the key</div>
+        <div onClick="{{ obNext }}" style="margin-top: 18px; background: #4353c8; color: #fff; font-size: 16px; font-weight: 600; padding: 13px 0; border-radius: 8px; cursor: pointer;">Finish setup</div>
+        <div style="font-size: 13px; color: #9a9aa2; margin-top: 12px;">You can change the key any time in Settings.</div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ======================= MAIN APP WINDOW ======================= -->
+  <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
+  <div style="width: 400px; background: #fbfbfc; border: 1px solid #e4e4e9; border-radius: 12px; box-shadow: 0 24px 64px rgba(23,23,27,0.14); overflow: hidden;" data-screen-label="Main window">
+    <!-- title bar -->
+    <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #ececf0;">
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #e4e4e9;"></span>
+      <span style="flex: 1; text-align: center; font-size: 12px; color: #9a9aa2;">SpeechTyper</span>
+      <span style="width: 55px;"></span>
+    </div>
+
+    <!-- header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #ececf0;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#4353c8"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0" stroke="#4353c8" stroke-width="2" stroke-linecap="round"></path><path d="M12 17.5V21" stroke="#4353c8" stroke-width="2" stroke-linecap="round"></path></svg>
+        <span style="font-weight: 600; font-size: 16px; color: #17171b;">SpeechTyper</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: #2fa36b;"></span>
+        <span style="font-size: 13px; color: #66666e;">{{ statusLabel }}</span>
+      </div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <sc-if value="{{ viewHome }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 26px 22px; text-align: center; border-bottom: 1px solid #ececf0;">
+        <div style="font-size: 20px; font-weight: 600; color: #17171b; line-height: 1.4;">Hold <span style="display: inline-block; border: 1px solid #d6d6de; border-bottom-width: 2px; border-radius: 6px; padding: 1px 10px; background: #fff; font-size: 17px; color: #4353c8;">Right Alt</span> and speak</div>
+        <div style="font-size: 14px; color: #66666e; margin-top: 8px;">Text is typed wherever your cursor is.</div>
+      </div>
+      <div style="padding: 6px 22px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #ececf0;">
+          <div>
+            <div style="font-size: 15px; font-weight: 500; color: #17171b;">Translate while dictating</div>
+            <div style="font-size: 13px; color: #66666e; margin-top: 2px;">{{ translateSub }}</div>
+          </div>
+          <div onClick="{{ toggleTranslate }}" style="width: 44px; height: 26px; border-radius: 999px; background: {{ translateBg }}; position: relative; cursor: pointer; transition: background 0.15s;">
+            <span style="position: absolute; top: 3px; left: {{ translateKnob }}px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.15s;"></span>
+          </div>
+        </div>
+        <sc-if value="{{ translateOn }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #ececf0;">
+            <span style="font-size: 13px; color: #66666e;">Type in</span>
+            <sc-for list="{{ targetLangs }}" as="tl" hint-placeholder-count="3">
+              <span onClick="{{ tl.pick }}" style="font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; cursor: pointer; background: {{ tl.bg }}; color: {{ tl.fg }}; border: 1px solid {{ tl.border }};">{{ tl.name }}</span>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div onClick="{{ goDictionary }}" style="display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #ececf0; cursor: pointer;">
+          <span style="font-size: 15px; font-weight: 500; color: #17171b;">Dictionary</span>
+          <span style="font-size: 13px; color: #66666e;">{{ dictCount }} custom words ›</span>
+        </div>
+        <div onClick="{{ goHistory }}" style="display: flex; align-items: center; justify-content: space-between; padding: 13px 0;">
+          <span style="font-size: 15px; font-weight: 500; color: #17171b;">History</span>
+          <span style="font-size: 13px; color: #66666e;">Last 20 dictations ›</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: #f4f4f7; border-top: 1px solid #ececf0;">
+        <span onClick="{{ goAccount }}" style="font-size: 13px; color: #66666e; cursor: pointer;">{{ planLabel }}</span>
+        <span onClick="{{ goSettings }}" style="font-size: 13px; font-weight: 600; color: #4353c8; cursor: pointer;">Settings</span>
+      </div>
+    </sc-if>
+
+    <!-- DICTIONARY VIEW -->
+    <sc-if value="{{ viewDictionary }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <span onClick="{{ goHome }}" style="font-size: 14px; color: #4353c8; cursor: pointer; font-weight: 500;">‹ Back</span>
+          <span style="font-size: 17px; font-weight: 600; color: #17171b;">Dictionary</span>
+        </div>
+        <div style="font-size: 13px; color: #66666e; line-height: 1.5; margin: 8px 0 14px 0;">Names and words SpeechTyper should spell exactly. Add a “sounds like” hint if it keeps mishearing one.</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <input value="{{ newWord }}" onChange="{{ onNewWord }}" placeholder="Add a word or name" style="flex: 1; border: 1px solid #d6d6de; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; color: #17171b; background: #fff; outline: none;">
+          <div onClick="{{ addWord }}" style="background: #4353c8; color: #fff; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 8px; cursor: pointer;">Add</div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ words }}" as="w" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #ececf0;">
+              <div>
+                <span style="font-size: 15px; font-weight: 500; color: #17171b;">{{ w.word }}</span>
+                <span style="font-size: 13px; color: #9a9aa2; margin-left: 10px;">{{ w.hint }}</span>
+              </div>
+              <span onClick="{{ w.remove }}" style="font-size: 15px; color: #9a9aa2; cursor: pointer; padding: 0 4px;" style-hover="color: #c0392b;">×</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- HISTORY VIEW -->
+    <sc-if value="{{ viewHistory }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <span onClick="{{ goHome }}" style="font-size: 14px; color: #4353c8; cursor: pointer; font-weight: 500;">‹ Back</span>
+          <span style="font-size: 17px; font-weight: 600; color: #17171b;">History</span>
+        </div>
+        <div style="font-size: 13px; color: #66666e; margin: 8px 0 10px 0;">Click any entry to copy it again. Stored only on this computer.</div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ history }}" as="h" hint-placeholder-count="4">
+            <div onClick="{{ h.copy }}" style="padding: 11px 0; border-bottom: 1px solid #ececf0; cursor: pointer;" style-hover="background: #f4f4f7;">
+              <div style="font-size: 14px; color: #17171b; line-height: 1.45;">{{ h.text }}</div>
+              <div style="font-size: 12px; color: #9a9aa2; margin-top: 3px;">{{ h.meta }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- SETTINGS VIEW -->
+    <sc-if value="{{ viewSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <span onClick="{{ goHome }}" style="font-size: 14px; color: #4353c8; cursor: pointer; font-weight: 500;">‹ Back</span>
+          <span style="font-size: 17px; font-weight: 600; color: #17171b;">Settings</span>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 10px 0 8px 0;">PUSH-TO-TALK KEY</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; border: 1px solid #d6d6de; border-bottom-width: 2px; border-radius: 6px; padding: 5px 14px; background: #fff; font-size: 15px; color: #4353c8; font-weight: 600;">Right Alt</span>
+          <span style="font-size: 13px; font-weight: 500; color: #4353c8; cursor: pointer;">Change key</span>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 18px 0 8px 0;">LANGUAGES I SPEAK</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #eceefb; color: #4353c8; border: 1px solid #cdd3f2;">English ×</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #eceefb; color: #4353c8; border: 1px solid #cdd3f2;">한국어 ×</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #fff; color: #66666e; border: 1px solid #d6d6de; cursor: pointer;">+ Add</span>
+        </div>
+        <div style="font-size: 12.5px; color: #9a9aa2; margin-top: 6px;">One language is fastest. Several switch automatically.</div>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 18px 0 8px 0;">STYLE</div>
+        <div style="display: flex; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; background: #4353c8; color: #fff;">Sentences</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; background: #fff; color: #66666e; border: 1px solid #d6d6de; cursor: pointer;">lowercase, no punctuation</span>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 18px 0 8px 0;">MICROPHONE</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #d6d6de; border-radius: 8px; padding: 10px 12px; background: #fff;">
+          <span style="font-size: 14px; color: #17171b;">System default</span>
+          <span style="font-size: 12px; color: #9a9aa2;">▾</span>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 18px 0 8px 0;">ACCURACY</div>
+        <div style="display: flex; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; background: #4353c8; color: #fff;">Fast</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; background: #fff; color: #66666e; border: 1px solid #d6d6de; cursor: pointer;">More accurate</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0 6px 0; margin-top: 10px; border-top: 1px solid #ececf0;">
+          <div>
+            <div style="font-size: 14px; font-weight: 500; color: #17171b;">Mute other sound while I talk</div>
+          </div>
+          <div style="width: 44px; height: 26px; border-radius: 999px; background: #d6d6de; position: relative; cursor: pointer;"><span style="position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span></div>
+        </div>
+        <div style="font-size: 12.5px; color: #9a9aa2; margin: 10px 0 6px 0; line-height: 1.5;">Closing this window keeps SpeechTyper running in the tray. Quit from the tray icon.</div>
+      </div>
+    </sc-if>
+
+    <!-- ACCOUNT VIEW -->
+    <sc-if value="{{ viewAccount }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 22px 22px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <span onClick="{{ goHome }}" style="font-size: 14px; color: #4353c8; cursor: pointer; font-weight: 500;">‹ Back</span>
+          <span style="font-size: 17px; font-weight: 600; color: #17171b;">Account</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #ececf0;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #eceefb; color: #4353c8; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px;">{{ userInitial }}</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 500; color: #17171b;">{{ userEmail }}</div>
+            <div style="font-size: 13px; color: {{ planColor }};">{{ planName }}</div>
+          </div>
+        </div>
+
+        <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 14px; border: 1px solid #cdd3f2; background: #eceefb; border-radius: 10px; padding: 14px 16px;">
+            <div style="font-size: 14px; font-weight: 600; color: #4353c8;">Admin account</div>
+            <div style="font-size: 13px; color: #66666e; margin-top: 3px; line-height: 1.5;">Full access, no subscription. Customer-facing billing is hidden for you.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ notAdmin }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9a9aa2; margin: 18px 0 10px 0;">YOUR PLAN</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="border: 2px solid #4353c8; border-radius: 10px; padding: 14px 16px; background: #fff; position: relative;">
+              <span style="position: absolute; top: -9px; left: 14px; background: #4353c8; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;">CURRENT — TRIAL</span>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px;">
+                <span style="font-size: 15px; font-weight: 600; color: #17171b;">Pro — yearly</span>
+                <span style="font-size: 15px; font-weight: 600; color: #17171b;">$49<span style="font-size: 13px; color: #9a9aa2; font-weight: 400;">/year</span></span>
+              </div>
+              <div style="font-size: 13px; color: #66666e; margin-top: 4px; line-height: 1.5;">Unlimited dictation, translation, all languages. 4 days left in trial.</div>
+            </div>
+            <div style="border: 1px solid #e4e4e9; border-radius: 10px; padding: 14px 16px; background: #fff;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <span style="font-size: 15px; font-weight: 600; color: #17171b;">Pro — lifetime</span>
+                <span style="font-size: 15px; font-weight: 600; color: #17171b;">$99<span style="font-size: 13px; color: #9a9aa2; font-weight: 400;"> once</span></span>
+              </div>
+              <div style="font-size: 13px; color: #66666e; margin-top: 4px;">Pay once, yours forever.</div>
+            </div>
+          </div>
+          <div style="margin-top: 14px; background: #4353c8; color: #fff; text-align: center; font-size: 15px; font-weight: 600; padding: 12px 0; border-radius: 8px; cursor: pointer;">Subscribe — $49/year</div>
+          <div style="font-size: 12.5px; color: #9a9aa2; text-align: center; margin-top: 10px;">Runs on your computer — compare at $144/year elsewhere.</div>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ======================= PILL OVERLAY PREVIEW ======================= -->
+  <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;" data-screen-label="Pill overlay">
+    <div style="font-size: 13px; color: #66666e;">Overlay while speaking</div>
+    <div style="width: 220px; height: 52px; border-radius: 999px; background: #17171b; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: center; padding: 0 20px; gap: 12px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #e05c5c;"></span>
+      <span style="display: inline-flex; align-items: center; gap: 4px; height: 30px;">{{ waveBars }}</span>
+    </div>
+    <div style="width: 220px; height: 52px; border-radius: 999px; background: #17171b; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8b8d94" stroke-width="1.8"></circle><path d="M3.5 12h17M12 3.5c2.4 2.3 3.7 5.2 3.7 8.5s-1.3 6.2-3.7 8.5c-2.4-2.3-3.7-5.2-3.7-8.5s1.3-6.2 3.7-8.5Z" stroke="#8b8d94" stroke-width="1.8"></path></svg>
+      <span style="font-size: 13px; color: #d6d6de;">Translating to Spanish…</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: &quot;1000&quot;, &quot;height&quot;: &quot;820&quot;}, &quot;adminMode&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Account&quot;}}">
+class Component extends DCLogic {
+  state = {
+    obStep: 0,
+    dlPct: 0,
+    tryText: "",
+    view: "home",
+    translateOn: true,
+    targetLang: "Spanish",
+    newWord: "",
+    words: [
+      { word: "Anthropic", hint: "" },
+      { word: "SpeechTyper", hint: "sounds like “speech tie per”" },
+      { word: "Nguyen", hint: "sounds like “win”" },
+      { word: "kubectl", hint: "sounds like “cube control”" },
+    ],
+  };
+
+  componentDidMount() {
+    this._dl = setInterval(() => {
+      this.setState(s => {
+        if (s.obStep !== 3 || s.dlPct >= 100) return null;
+        return { dlPct: Math.min(100, s.dlPct + 4) };
+      });
+    }, 120);
+  }
+  componentWillUnmount() { clearInterval(this._dl); }
+
+  renderVals() {
+    const s = this.state;
+    const accent = "#4353c8";
+    const obNext = () => this.setState(st => ({ obStep: st.obStep + 1 }));
+    const obDots = [0, 1, 2, 3, 4].map(i => ({ color: i <= s.obStep ? accent : "#e4e4e9" }));
+
+    const langs = ["Spanish", "Korean", "Japanese"];
+    const targetLangs = langs.map(name => ({
+      name,
+      bg: name === s.targetLang ? "#eceefb" : "#fff",
+      fg: name === s.targetLang ? accent : "#66666e",
+      border: name === s.targetLang ? "#cdd3f2" : "#d6d6de",
+      pick: () => this.setState({ targetLang: name }),
+    }));
+
+    const words = s.words.map((w, i) => ({
+      word: w.word,
+      hint: w.hint,
+      remove: () => this.setState(st => ({ words: st.words.filter((_, j) => j !== i) })),
+    }));
+
+    const history = [
+      { text: "Can you send me the updated deck before the standup tomorrow?", meta: "2 min ago · Slack" },
+      { text: "Hola, ¿puedes revisar el contrato y confirmar antes del viernes?", meta: "18 min ago · translated to Spanish" },
+      { text: "Let's push the release to Thursday, the installer still fails on Windows 11.", meta: "1 h ago · Mail" },
+      { text: "kubectl get pods --namespace production", meta: "3 h ago · Terminal" },
+    ].map(h => ({ ...h, copy: () => {} }));
+
+    const bars = [10, 20, 30, 16, 26, 12, 22, 8].map((h, i) =>
+      React.createElement("span", {
+        key: i,
+        style: {
+          width: 4, height: h, background: "#fff", borderRadius: 2,
+          animation: "st-bounce 0.9s ease-in-out " + (i * 0.1) + "s infinite alternate",
+        },
+      })
+    );
+    const waveBars = React.createElement(React.Fragment, null,
+      React.createElement("style", null, "@keyframes st-bounce { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }"),
+      bars);
+
+    return {
+      showOnboarding: true,
+      showApp: true,
+      obNext,
+      obDots,
+      ob0: s.obStep === 0, ob1: s.obStep === 1, ob2: s.obStep === 2,
+      ob3: s.obStep === 3, ob4: s.obStep >= 4,
+      dlPct: s.obStep === 3 ? s.dlPct : 100,
+      dlDone: s.dlPct >= 100,
+      dlLabel: s.dlPct >= 100 ? "Done — 147 MB" : Math.round(s.dlPct * 1.47) + " MB of 147 MB",
+      tryText: s.tryText || "Your words show up here",
+      tryColor: s.tryText ? "#17171b" : "#9a9aa2",
+      trySim: () => {
+        this.setState({ tryText: "Listening…" });
+        setTimeout(() => this.setState({ tryText: "Hello world" }), 900);
+      },
+
+      statusLabel: "Ready",
+      viewHome: s.view === "home",
+      viewDictionary: s.view === "dictionary",
+      viewHistory: s.view === "history",
+      viewSettings: s.view === "settings",
+      viewAccount: s.view === "account",
+      goHome: () => this.setState({ view: "home" }),
+      goDictionary: () => this.setState({ view: "dictionary" }),
+      goHistory: () => this.setState({ view: "history" }),
+      goSettings: () => this.setState({ view: "settings" }),
+      goAccount: () => this.setState({ view: "account" }),
+
+      translateOn: s.translateOn,
+      toggleTranslate: () => this.setState(st => ({ translateOn: !st.translateOn })),
+      translateBg: s.translateOn ? accent : "#d6d6de",
+      translateKnob: s.translateOn ? 21 : 3,
+      translateSub: s.translateOn ? "Any language → " + s.targetLang : "Off",
+      targetLangs,
+
+      dictCount: s.words.length,
+      words,
+      newWord: s.newWord,
+      onNewWord: e => this.setState({ newWord: e.target.value }),
+      addWord: () => this.setState(st => st.newWord.trim()
+        ? { words: [{ word: st.newWord.trim(), hint: "" }, ...st.words], newWord: "" }
+        : null),
+
+      history,
+      planLabel: (this.props.adminMode ?? false) ? "Admin — free" : "Trial — 4 days left",
+      planName: (this.props.adminMode ?? false) ? "Admin — full access" : "Pro trial",
+      planColor: (this.props.adminMode ?? false) ? "#4353c8" : "#2fa36b",
+      userEmail: (this.props.adminMode ?? false) ? "you@speechtyper.app" : "customer@gmail.com",
+      userInitial: (this.props.adminMode ?? false) ? "A" : "C",
+      isAdmin: this.props.adminMode ?? false,
+      notAdmin: !(this.props.adminMode ?? false),
+      waveBars,
+    };
+  }
+}
+</script>
+</body>
+</html>

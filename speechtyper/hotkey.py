@@ -1,7 +1,33 @@
 """Global push-to-talk listener with learn-key support."""
+import sys
 import threading
 
 from pynput import keyboard
+
+
+def accessibility_is_granted() -> bool:
+    """Whether this process may monitor global keyboard events on macOS."""
+    if sys.platform != "darwin":
+        return True
+    try:
+        import ApplicationServices as app_services
+
+        return bool(app_services.AXIsProcessTrusted())
+    except Exception:
+        return False
+
+
+def request_accessibility_permission() -> bool:
+    """Ask macOS to register/prompt this app for Accessibility permission."""
+    if sys.platform != "darwin":
+        return True
+    try:
+        import ApplicationServices as app_services
+
+        options = {app_services.kAXTrustedCheckOptionPrompt: True}
+        return bool(app_services.AXIsProcessTrustedWithOptions(options))
+    except Exception:
+        return False
 
 
 def key_to_spec(key) -> tuple[str, str]:
@@ -39,6 +65,8 @@ class HotkeyListener:
         self._listener = None
 
     def start(self):
+        if self._listener is not None and self._listener.is_alive():
+            return
         self._listener = keyboard.Listener(
             on_press=self._press, on_release=self._release
         )

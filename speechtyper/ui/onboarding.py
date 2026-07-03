@@ -210,6 +210,14 @@ class Onboarding(QWidget):
 
     def _grant(self, key, btn):
         if sys.platform == "darwin":
+            if key == "kbd":
+                from ..hotkey import (accessibility_is_granted,
+                                      request_accessibility_permission)
+
+                if accessibility_is_granted():
+                    self._mark_permission_granted(btn)
+                    return
+                request_accessibility_permission()
             pane = ("Privacy_Microphone" if key == "mic"
                     else "Privacy_Accessibility")
             try:
@@ -219,7 +227,14 @@ class Onboarding(QWidget):
                     f"?{pane}"])
             except Exception:
                 pass
+            if key == "kbd":
+                btn.setText("Check again")
+                return
         # mark granted (the OS prompt/settings do the real work)
+        self._mark_permission_granted(btn)
+
+    @staticmethod
+    def _mark_permission_granted(btn):
         btn.setText("Granted")
         btn.setEnabled(False)
         btn.setStyleSheet(

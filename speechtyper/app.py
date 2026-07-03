@@ -2,17 +2,18 @@
 Qt (PySide6) UI; the Python core (recorder/transcriber/hotkey/injector)
 is unchanged from v1 apart from bug fixes."""
 import queue
+import subprocess
 import sys
 import threading
 import time
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import config, dictionary, history, sounds, translate
 from .account import Account
 from .formatter import format_text
-from .hotkey import HotkeyListener
+from .hotkey import HotkeyListener, accessibility_is_granted
 from .injector import deliver
 from .mute import Muter
 from .recorder import Recorder
@@ -60,13 +61,20 @@ class App:
             on_press_start=lambda: self.events.put("start"),
             on_release=lambda: self.events.put("stop"),
         )
-        self.hotkey.start()
+        self._waiting_for_accessibility = (
+            sys.platform == "darwin" and not accessibility_is_granted()
+        )
+        if not self._waiting_for_accessibility:
+            self.hotkey.start()
 
         self.tray = start_tray(self.qapp, self._open_window, self.quit)
 
         self._timer = QTimer()
         self._timer.timeout.connect(self._poll)
         self._timer.start(25)
+
+        self._permission_timer = QTimer()
+        self._permission_timer.timeout.connect(self._poll_accessibility)
 
     # ---- controller interface used by the views ----
     def save_cfg(self, cfg):
@@ -217,7 +225,46 @@ class App:
             self.onboarding.show()
         else:
             self._open_window()
+        if self._waiting_for_accessibility:
+            self.window.set_status("Permission needed", theme.RED)
+            self._permission_timer.start(1000)
+            QTimer.singleShot(400, self._show_accessibility_warning)
         sys.exit(self.qapp.exec())
+
+    def _show_accessibility_warning(self):
+        """Explain why the global hotkey is unavailable and open Settings."""
+        if accessibility_is_granted():
+            self._poll_accessibility()
+            return
+        parent = self.onboarding if self.onboarding else self.window
+        box = QMessageBox(parent)
+        box.setIcon(QMessageBox.Warning)
+        box.setWindowTitle("Allow keyboard access")
+        box.setText("SpeechTyper cannot detect your push-to-talk key yet.")
+        box.setInformativeText(
+            "Enable SpeechTyper in System Settings → Privacy & Security → "
+            "Accessibility. The hotkey will start automatically once enabled."
+        )
+        box.setStandardButtons(QMessageBox.Open | QMessageBox.Cancel)
+        if box.exec() == QMessageBox.Open:
+            try:
+                subprocess.Popen([
+                    "open",
+                    "x-apple.systempreferences:com.apple.preference.security"
+                    "?Privacy_Accessibility",
+                ])
+            except Exception:
+                pass
+
+    def _poll_accessibility(self):
+        if not self._waiting_for_accessibility:
+            self._permission_timer.stop()
+            return
+        if accessibility_is_granted():
+            self._waiting_for_accessibility = False
+            self._permission_timer.stop()
+            self.hotkey.start()
+            self.window.set_status("Ready", theme.GREEN)
 
     def _onboarding_done(self, email):
         if email:

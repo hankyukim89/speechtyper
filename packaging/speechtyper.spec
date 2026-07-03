@@ -32,12 +32,15 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+icon_file = str(ROOT / "packaging" /
+                ("icon.icns" if sys.platform == "darwin" else "icon.ico"))
+
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
     name="SpeechTyper",
     console=False,
-    icon=None,
+    icon=icon_file,
 )
 coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, name="SpeechTyper")
 
@@ -45,6 +48,7 @@ if sys.platform == "darwin":
     app = BUNDLE(
         coll,
         name="SpeechTyper.app",
+        icon=icon_file,
         bundle_identifier="com.speechtyper.app",
         codesign_identity=os.environ.get("SIGN_ID") or None,
         entitlements_file=str(ROOT / "packaging" / "entitlements.plist"),

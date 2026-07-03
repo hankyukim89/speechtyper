@@ -663,8 +663,7 @@ class MainWindow(QWidget):
                 sub.clicked.connect(lambda: a.open_checkout("yearly"))
                 lay.addWidget(sub)
                 lay.addSpacing(10)
-                note = label("Runs on your computer — compare at $144/year "
-                             "elsewhere.", 12, theme.TEXT_MUTED)
+                note = label("Cancel anytime.", 12, theme.TEXT_MUTED)
                 note.setAlignment(Qt.AlignCenter)
                 lay.addWidget(note)
         lay.addStretch(1)

@@ -2,6 +2,7 @@
 Qt (PySide6) UI; the Python core (recorder/transcriber/hotkey/injector)
 is unchanged from v1 apart from bug fixes."""
 import queue
+import os
 import subprocess
 import sys
 import threading
@@ -33,6 +34,8 @@ class App:
         self.account = Account()
         self.events = queue.Queue()
         self._press_t = 0.0
+        self._quitting = False
+        self._force_quit_timer = None
 
         self.qapp = QApplication(sys.argv)
         self.qapp.setQuitOnLastWindowClosed(False)
@@ -208,11 +211,24 @@ class App:
 
     # ---- lifecycle ----
     def quit(self):
+        if self._quitting:
+            return
+        self._quitting = True
+
+        # If a native audio/input teardown ever blocks, guarantee the user's
+        # explicit Quit command still terminates the process.
+        self._force_quit_timer = threading.Timer(2.0, os._exit, args=(0,))
+        self._force_quit_timer.start()
+
+        self._timer.stop()
+        self._permission_timer.stop()
+        self.tray.hide()
+        self.qapp.quit()
         try:
             self.hotkey.stop()
             self.recorder.close()
-        finally:
-            self.qapp.quit()
+        except Exception:
+            pass
 
     def run(self):
         try:
@@ -229,7 +245,10 @@ class App:
             self.window.set_status("Permission needed", theme.RED)
             self._permission_timer.start(1000)
             QTimer.singleShot(400, self._show_accessibility_warning)
-        sys.exit(self.qapp.exec())
+        exit_code = self.qapp.exec()
+        if self._force_quit_timer is not None:
+            self._force_quit_timer.cancel()
+        sys.exit(exit_code)
 
     def _show_accessibility_warning(self):
         """Explain why the global hotkey is unavailable and open Settings."""

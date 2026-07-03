@@ -1,5 +1,6 @@
 """System tray / menu-bar icon (QSystemTrayIcon replaces pystray)."""
-from PySide6.QtGui import QAction, QColor, QPainter, QPixmap
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QColor, QKeySequence, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
 from . import theme
@@ -30,9 +31,11 @@ def start_tray(parent, on_open, on_quit):
     tray.setToolTip("SpeechTyper")
     menu = QMenu()
     open_act = QAction("Open SpeechTyper", menu)
-    open_act.triggered.connect(on_open)
+    open_act.triggered.connect(lambda _checked=False: on_open())
     quit_act = QAction("Quit SpeechTyper", menu)
-    quit_act.triggered.connect(on_quit)
+    quit_act.setShortcut(QKeySequence.Quit)
+    quit_act.setShortcutContext(Qt.ApplicationShortcut)
+    quit_act.triggered.connect(lambda _checked=False: on_quit())
     menu.addAction(open_act)
     menu.addSeparator()
     menu.addAction(quit_act)

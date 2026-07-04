@@ -9,7 +9,7 @@ import threading
 import time
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication
 
 from . import cloud, config, dictionary, history, sounds, translate
 from .account import Account
@@ -21,6 +21,7 @@ from .mute import Muter
 from .recorder import Recorder
 from .transcriber import Transcriber
 from .ui import theme
+from .ui.dialogs import PermissionDialog
 from .ui.main_window import MainWindow
 from .ui.onboarding import Onboarding
 from .ui.overlay import PillOverlay
@@ -89,6 +90,9 @@ class App:
             self.recorder.restart()
 
     def learn_key(self, cb):
+        # the listener may never have started (permission granted later)
+        if not self._waiting_for_accessibility:
+            self.hotkey.start()
         self.hotkey.learn_next_key(cb)
 
     def list_devices(self):
@@ -293,16 +297,7 @@ class App:
             self._poll_accessibility()
             return
         parent = self.onboarding if self.onboarding else self.window
-        box = QMessageBox(parent)
-        box.setIcon(QMessageBox.Warning)
-        box.setWindowTitle("Allow keyboard access")
-        box.setText("SpeechTyper cannot detect your push-to-talk key yet.")
-        box.setInformativeText(
-            "Enable SpeechTyper in System Settings → Privacy & Security → "
-            "Accessibility. The hotkey will start automatically once enabled."
-        )
-        box.setStandardButtons(QMessageBox.Open | QMessageBox.Cancel)
-        if box.exec() == QMessageBox.Open:
+        if PermissionDialog(parent).exec():
             self.request_accessibility_access()
 
     def request_accessibility_access(self):

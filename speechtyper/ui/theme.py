@@ -40,6 +40,11 @@ def load_font():
             FAMILY = fams[0]
 
 
+def asset_path(name: str) -> str:
+    """Absolute path to a bundled asset (for QSS url() references)."""
+    return str(Path(__file__).resolve().parent.parent / "assets" / name)
+
+
 def font(size: int, weight: int = 400) -> QFont:
     f = QFont(FAMILY)
     f.setPixelSize(size)

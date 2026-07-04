@@ -34,15 +34,23 @@ class Recorder:
         if self._stream is not None and self._stream.active:
             return
         self.close()
-        self._stream = sd.InputStream(
+        try:
+            self._stream = self._open(self._get_device())
+        except Exception:
+            # the saved device may be unplugged or re-indexed since last
+            # run — never let a stale index kill the microphone entirely
+            self._stream = self._open(None)
+        self._stream.start()
+
+    def _open(self, device):
+        return sd.InputStream(
             samplerate=SAMPLE_RATE,
             channels=1,
             dtype="float32",
             blocksize=512,
-            device=self._get_device(),
+            device=device,
             callback=self._callback,
         )
-        self._stream.start()
 
     def restart(self):
         self.close()

@@ -1,5 +1,8 @@
-"""Main 400px window: home / dictionary / history / settings / account.
-All view changes are in-window swaps with ‹ Back (per handoff)."""
+"""Main window: home / dictionary / history / settings / account.
+One constant window size; views swap in-window with ‹ Back and scroll
+when their content is taller than the window."""
+import sys
+
 import pyperclip
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QCursor
@@ -19,9 +22,14 @@ INPUT_QSS = (
     f" {theme.BORDER_INPUT}; border-radius: 8px; padding: 10px 12px; }}"
 )
 
-# Dropdown list styling shared by every combobox (language picker, mic).
+# Dropdown styling shared by every combobox: clean chevron arrow (instead
+# of the stock boxed arrow) + a themed popup list.
 COMBO_POPUP_QSS = (
-    f"QComboBox QAbstractItemView {{ font-family: '{theme.FAMILY}';"
+    " QComboBox::drop-down { subcontrol-origin: padding;"
+    " subcontrol-position: center right; border: none; width: 30px; }"
+    f' QComboBox::down-arrow {{ image: url("{theme.asset_path("chevron-down.svg")}");'
+    " width: 13px; height: 13px; }"
+    f" QComboBox QAbstractItemView {{ font-family: '{theme.FAMILY}';"
     f" font-size: 13px; color: {theme.TEXT}; background: #ffffff;"
     f" border: 1px solid {theme.BORDER_INPUT}; border-radius: 8px;"
     " padding: 4px; outline: 0; }"
@@ -75,8 +83,10 @@ class MainWindow(QWidget):
         self.ctrl = ctrl
 
         self.setWindowTitle("SpeechTyper")
-        self.setMinimumWidth(400)
-        self.resize(400, 0)
+        # one window size for every view (content scrolls when taller);
+        # freely resizable in both directions
+        self.setMinimumSize(420, 560)
+        self.resize(440, 640)
         self.setStyleSheet(f"background: {theme.BG};")
 
         root = QVBoxLayout(self)
@@ -111,6 +121,7 @@ class MainWindow(QWidget):
         root.addWidget(self.stack, 1)
 
         self._views = {}
+        self._areas = {}
         self._build_all()
         self.show_view("home")
 
@@ -130,22 +141,51 @@ class MainWindow(QWidget):
             self.ctrl.request_accessibility_access()
 
     def _page(self, name):
+        # every view lives in a frameless scroll area, so the window keeps
+        # one constant size and tall views scroll instead of resizing it
+        area = QScrollArea()
+        area.setWidgetResizable(True)
+        area.setFrameShape(QScrollArea.NoFrame)
+        area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        area.setStyleSheet("QScrollArea { background: transparent; }"
+                           " QScrollArea > QWidget > QWidget"
+                           " { background: transparent; }")
         w = QWidget()
+        area.setWidget(w)
         self._views[name] = w
-        self.stack.addWidget(w)
+        self._areas[name] = area
+        self.stack.addWidget(area)
         return w
 
     def show_view(self, name):
         # rebuild dynamic views so they always reflect current state
         if name in ("home", "dictionary", "history", "settings", "account"):
             getattr(self, f"_fill_{name}")()
-        current = self._views[name]
-        self.stack.setCurrentWidget(current)
-        self.stack.updateGeometry()
-        self.layout().invalidate()
-        self.layout().activate()
-        # keep the user's chosen width; height always fits the view
-        self.resize(self.width(), self.layout().sizeHint().height())
+        self._current = name
+        self.stack.setCurrentWidget(self._areas[name])
+        self._sync_page_height(name)
+        self._areas[name].verticalScrollBar().setValue(0)
+
+    def _sync_page_height(self, name):
+        """Pin the page's minimum height to its natural height so the
+        scroll area scrolls tall views instead of squashing them, while
+        short views still stretch to fill the window."""
+        w = self._views[name]
+        lay = w.layout()
+        if lay is None:
+            return
+        vw = self._areas[name].viewport().width() or self.width()
+        if lay.hasHeightForWidth():
+            h = lay.totalHeightForWidth(vw)
+        else:
+            h = lay.totalSizeHint().height()
+        w.setMinimumHeight(h)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        # wrapped labels/chips change height with width — keep in sync
+        if getattr(self, "_current", None):
+            self._sync_page_height(self._current)
 
     def _back_header(self, lay, title):
         row = QHBoxLayout()
@@ -261,6 +301,7 @@ class MainWindow(QWidget):
         his.value.setText("Last 20 dictations ›")
         rl.addWidget(his)
         lay.addWidget(rows)
+        lay.addStretch(1)  # pin the footer to the bottom of the window
 
         # footer strip
         foot = QWidget()
@@ -409,16 +450,8 @@ class MainWindow(QWidget):
                 lambda _ev, t=txt, it=item: self._copy_history(t))
             al.addWidget(item)
             al.addWidget(divider())
-        if len(entries) > 6:
-            scroll = QScrollArea()
-            scroll.setWidgetResizable(True)
-            scroll.setFrameShape(QScrollArea.NoFrame)
-            scroll.setStyleSheet("background: transparent;")
-            scroll.setWidget(area_widget)
-            scroll.setFixedHeight(420)
-            lay.addWidget(scroll)
-        else:
-            lay.addWidget(area_widget)
+        # the page itself scrolls now — no nested scroll area needed
+        lay.addWidget(area_widget)
         lay.addStretch(1)
 
     def _copy_history(self, text):
@@ -430,46 +463,64 @@ class MainWindow(QWidget):
             pass
 
     # =================== SETTINGS ===================
+    def _card(self, lay, title):
+        """White rounded section card with a small header above it.
+        Returns the card's inner layout."""
+        lay.addWidget(section_label(title))
+        lay.addSpacing(8)
+        card = QWidget()
+        card.setObjectName("card")
+        card.setStyleSheet(
+            f"QWidget#card {{ background: #ffffff; border: 1px solid"
+            f" {theme.BORDER_CARD}; border-radius: 12px; }}")
+        cl = QVBoxLayout(card)
+        cl.setContentsMargins(16, 14, 16, 14)
+        cl.setSpacing(12)
+        lay.addWidget(card)
+        return cl
+
     def _fill_settings(self):
         w = self._views["settings"]
         self._clear(w)
         lay = QVBoxLayout(w)
-        lay.setContentsMargins(22, 16, 22, 16)
+        lay.setContentsMargins(22, 16, 22, 22)
         lay.setSpacing(0)
         self._back_header(lay, "Settings")
+        lay.addSpacing(16)
 
-        # push-to-talk key
-        lay.addSpacing(10)
-        lay.addWidget(section_label("Push-to-talk key"))
-        lay.addSpacing(8)
+        # --- push-to-talk card ---
+        c = self._card(lay, "Push-to-talk")
         key_row = QHBoxLayout()
         key_row.setSpacing(10)
-        self._keycap = Keycap(self.cfg.get("hotkey_label", "Right Alt"))
+        key_row.addWidget(label("Hold this key to dictate", 14,
+                                theme.TEXT, 500))
+        key_row.addStretch(1)
+        self._keycap = Keycap(self.cfg.get("hotkey_label", "Right Alt"), 13)
         key_row.addWidget(self._keycap)
-        self._change_key = LinkLabel("Change key", theme.ACCENT, 13, 500)
+        self._change_key = LinkLabel("Change", theme.ACCENT, 13, 500)
         self._change_key.clicked.connect(self._learn_key)
         key_row.addWidget(self._change_key)
-        key_row.addStretch(1)
-        lay.addLayout(key_row)
+        c.addLayout(key_row)
 
-        # languages I speak
-        lay.addSpacing(16)
-        lay.addWidget(divider())
-        lay.addSpacing(16)
-        lay.addWidget(section_label("Languages I speak"))
-        lay.addSpacing(8)
+        # --- languages card ---
+        lay.addSpacing(18)
+        c = self._card(lay, "Languages I speak")
         chips = FlowLayout(hspacing=6, vspacing=8)
         for code in self.cfg.get("languages", ["en"]):
             name = config.LANG_NAMES.get(code, code).split()[-1]
-            c = Chip(f"{name} ×", True)
-            c.clicked.connect(lambda _=False, code=code: self._remove_lang(code))
-            chips.addWidget(c)
+            chip = Chip(f"{name} ×", True)
+            chip.clicked.connect(
+                lambda _=False, code=code: self._remove_lang(code))
+            chips.addWidget(chip)
         self._lang_picker = QComboBox()
         self._lang_picker.setStyleSheet(
             f"QComboBox {{ font-family: '{theme.FAMILY}'; font-size: 13px;"
             f" font-weight: 500; color: {theme.TEXT_2}; background: #ffffff;"
             f" border: 1px solid {theme.BORDER_INPUT}; border-radius: 13px;"
-            f" padding: 5px 12px; }}" + COMBO_POPUP_QSS)
+            f" padding: 5px 28px 5px 12px; }}" + COMBO_POPUP_QSS)
+        self._lang_picker.setSizeAdjustPolicy(
+            QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self._lang_picker.setMinimumContentsLength(6)
         self._lang_picker.addItem("+ Add")
         for code, name in config.LANGUAGES:
             if code not in self.cfg.get("languages", []):
@@ -478,34 +529,46 @@ class MainWindow(QWidget):
         chips.addWidget(self._lang_picker)
         chip_host = QWidget()
         chip_host.setLayout(chips)
-        lay.addWidget(chip_host)
-        lay.addSpacing(6)
-        lay.addWidget(label("One language is fastest. Several switch "
-                            "automatically.", 12, theme.TEXT_MUTED))
+        c.addWidget(chip_host)
+        c.addWidget(label("One language is fastest. Several switch "
+                          "automatically.", 12, theme.TEXT_MUTED, wrap=True))
 
-        # style
-        lay.addSpacing(16)
-        lay.addWidget(divider())
-        lay.addSpacing(16)
-        lay.addWidget(section_label("Style"))
-        lay.addSpacing(8)
+        # --- transcription card ---
+        lay.addSpacing(18)
+        c = self._card(lay, "Transcription")
+        c.addWidget(label("Style", 14, theme.TEXT, 500))
         style = Segmented(["Sentences", "lowercase, no punctuation"],
                           0 if self.cfg.get("mode", "normal") == "normal" else 1)
         style.changed.connect(self._set_mode)
-        lay.addWidget(style)
+        c.addWidget(style)
+        c.addWidget(divider())
+        c.addWidget(label("Accuracy", 14, theme.TEXT, 500))
+        acc = Segmented(["Fast", "More accurate"],
+                        0 if self.cfg.get("model", "base") == "base" else 1)
+        acc.changed.connect(self._set_model)
+        c.addWidget(acc)
+        if self.account.is_admin:
+            c.addWidget(divider())
+            c.addWidget(label("Engine  ·  admin only", 14, theme.TEXT, 500))
+            eng = Segmented(["Cloud API", "Local"],
+                            0 if self.cfg.get("engine", "cloud") == "cloud"
+                            else 1)
+            eng.changed.connect(self._set_engine)
+            c.addWidget(eng)
+            c.addWidget(label("Customers only ever use the cloud API. "
+                              "Local runs on this machine.",
+                              12, theme.TEXT_MUTED, wrap=True))
 
-        # microphone
-        lay.addSpacing(16)
-        lay.addWidget(divider())
-        lay.addSpacing(16)
-        lay.addWidget(section_label("Microphone"))
-        lay.addSpacing(8)
+        # --- audio card ---
+        lay.addSpacing(18)
+        c = self._card(lay, "Audio")
+        c.addWidget(label("Microphone", 14, theme.TEXT, 500))
         self._mic = QComboBox()
         self._mic.setStyleSheet(
             f"QComboBox {{ font-family: '{theme.FAMILY}'; font-size: 14px;"
             f" color: {theme.TEXT}; background: #ffffff; border: 1px solid"
-            f" {theme.BORDER_INPUT}; border-radius: 8px; padding: 10px 12px; }}"
-            + COMBO_POPUP_QSS)
+            f" {theme.BORDER_INPUT}; border-radius: 8px;"
+            f" padding: 10px 32px 10px 12px; }}" + COMBO_POPUP_QSS)
         self._mic.addItem("System default", None)
         for idx, name in self.ctrl.list_devices():
             self._mic.addItem(name, idx)
@@ -513,65 +576,42 @@ class MainWindow(QWidget):
         pos = self._mic.findData(cur)
         self._mic.setCurrentIndex(pos if pos >= 0 else 0)
         self._mic.activated.connect(self._set_mic)
-        lay.addWidget(self._mic)
-
-        # accuracy
-        lay.addSpacing(16)
-        lay.addWidget(divider())
-        lay.addSpacing(16)
-        lay.addWidget(section_label("Accuracy"))
-        lay.addSpacing(8)
-        acc = Segmented(["Fast", "More accurate"],
-                        0 if self.cfg.get("model", "base") == "base" else 1)
-        acc.changed.connect(self._set_model)
-        lay.addWidget(acc)
-
-        # engine (admin only — customers always use the cloud API)
-        if self.account.is_admin:
-            lay.addSpacing(16)
-            lay.addWidget(divider())
-            lay.addSpacing(16)
-            lay.addWidget(section_label("Engine (admin only)"))
-            lay.addSpacing(8)
-            eng = Segmented(["Cloud API", "Local"],
-                            0 if self.cfg.get("engine", "cloud") == "cloud"
-                            else 1)
-            eng.changed.connect(self._set_engine)
-            lay.addWidget(eng)
-            lay.addSpacing(6)
-            lay.addWidget(label("Customers only ever use the cloud API. "
-                                "Local runs on this machine.",
-                                12, theme.TEXT_MUTED, wrap=True))
-
-        # mute toggle
-        lay.addSpacing(14)
-        lay.addWidget(divider())
+        c.addWidget(self._mic)
+        c.addWidget(divider())
         mute_row = QHBoxLayout()
-        mute_row.setContentsMargins(0, 16, 0, 6)
+        mute_row.setSpacing(10)
         mute_row.addWidget(label("Mute other sound while I talk", 14,
                                  theme.TEXT, 500))
         mute_row.addStretch(1)
         mute = Toggle(self.cfg.get("mute_while_listening", False))
         mute.toggled.connect(self._set_mute)
         mute_row.addWidget(mute)
-        lay.addLayout(mute_row)
-        lay.addSpacing(10)
-        lay.addWidget(label(
-            "Closing this window keeps SpeechTyper running in the tray. "
-            "Quit from the tray icon.", 12, theme.TEXT_MUTED, wrap=True))
-        lay.addSpacing(12)
-        lay.addWidget(divider())
+        c.addLayout(mute_row)
+
+        # --- footer ---
+        lay.addSpacing(18)
         redo_row = QHBoxLayout()
-        redo_row.setContentsMargins(0, 12, 0, 0)
         redo = LinkLabel("Redo setup tutorial", theme.ACCENT, 13, 500)
         redo.clicked.connect(self._redo_setup)
         redo_row.addWidget(redo)
         redo_row.addStretch(1)
         lay.addLayout(redo_row)
-        lay.addSpacing(6)
+        lay.addSpacing(10)
+        lay.addWidget(label(
+            "Closing this window keeps SpeechTyper running in the tray. "
+            "Quit from the tray icon.", 12, theme.TEXT_MUTED, wrap=True))
         lay.addStretch(1)
 
     def _learn_key(self):
+        if sys.platform == "darwin":
+            from ..hotkey import accessibility_is_granted
+
+            if not accessibility_is_granted():
+                # without Accessibility the listener can't see any keys —
+                # say so instead of silently doing nothing
+                self._change_key.setText("Enable keyboard access first")
+                self.ctrl.request_accessibility_access()
+                return
         self._change_key.setText("Press any key…")
         def done(spec, lab):
             self.cfg["hotkey"] = spec

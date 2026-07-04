@@ -62,6 +62,10 @@ class Onboarding(QWidget):
             c = theme.ACCENT if i <= step else theme.BORDER_CARD
             d.setStyleSheet(f"background: {c}; border-radius: 4px;")
         self.stack.setCurrentIndex(step)
+        if step == 2:
+            self._start_permission_watch()
+        else:
+            self._stop_permission_watch()
         if step == 3:
             self._start_download_watch()
         self.adjustSize()
@@ -98,8 +102,7 @@ class Onboarding(QWidget):
         lay.addWidget(t)
         lay.addSpacing(10)
         s = label("Hold a key, speak, and your words are typed into any app. "
-                  "Everything runs on your computer — no internet needed "
-                  "after setup.", 15, theme.TEXT_2, wrap=True)
+                  "Powered by premium speech AI.", 15, theme.TEXT_2, wrap=True)
         s.setAlignment(Qt.AlignCenter)
         lay.addWidget(s)
         lay.addSpacing(28)
@@ -209,29 +212,69 @@ class Onboarding(QWidget):
         lay.addWidget(cont)
 
     def _grant(self, key, btn):
-        if sys.platform == "darwin":
-            if key == "kbd":
-                from ..hotkey import (accessibility_is_granted,
-                                      request_accessibility_permission)
-
-                if accessibility_is_granted():
-                    self._mark_permission_granted(btn)
-                    return
-                request_accessibility_permission()
-            pane = ("Privacy_Microphone" if key == "mic"
-                    else "Privacy_Accessibility")
+        if key == "mic":
+            # opening the input stream makes the OS show its mic prompt
             try:
-                subprocess.Popen([
-                    "open",
-                    "x-apple.systempreferences:com.apple.preference.security"
-                    f"?{pane}"])
+                self.ctrl.recorder.start_stream()
+                self._mark_permission_granted(btn)
+                return
             except Exception:
                 pass
-            if key == "kbd":
-                btn.setText("Check again")
+            if sys.platform == "darwin":
+                self._open_privacy_pane("Privacy_Microphone")
+                btn.setText("Waiting…")
                 return
-        # mark granted (the OS prompt/settings do the real work)
-        self._mark_permission_granted(btn)
+            self._mark_permission_granted(btn)
+            return
+
+        # keyboard access (macOS Accessibility)
+        if sys.platform != "darwin":
+            self._mark_permission_granted(btn)
+            return
+        from ..hotkey import (accessibility_is_granted,
+                              request_accessibility_permission)
+
+        if accessibility_is_granted():
+            self._mark_permission_granted(btn)
+            return
+        request_accessibility_permission()  # registers this build + prompts
+        self._open_privacy_pane("Privacy_Accessibility")
+        btn.setText("Waiting…")  # the watcher flips it once granted
+
+    @staticmethod
+    def _open_privacy_pane(pane):
+        try:
+            subprocess.Popen([
+                "open",
+                "x-apple.systempreferences:com.apple.preference.security"
+                f"?{pane}"])
+        except Exception:
+            pass
+
+    # poll while the permissions step is visible so the buttons flip to
+    # "Granted" by themselves the moment the user enables the switch
+    def _start_permission_watch(self):
+        self._stop_permission_watch()
+        self._perm_timer = QTimer(self)
+        self._perm_timer.timeout.connect(self._tick_permissions)
+        self._perm_timer.start(700)
+        self._tick_permissions()
+
+    def _stop_permission_watch(self):
+        if getattr(self, "_perm_timer", None):
+            self._perm_timer.stop()
+            self._perm_timer = None
+
+    def _tick_permissions(self):
+        if sys.platform != "darwin":
+            return
+        from ..hotkey import accessibility_is_granted
+
+        btn = getattr(self, "_perm_kbd", None)
+        if btn and btn.isEnabled() and accessibility_is_granted():
+            self._mark_permission_granted(btn)
+            if hasattr(self.ctrl, "notify_accessibility_granted"):
+                self.ctrl.notify_accessibility_granted()
 
     @staticmethod
     def _mark_permission_granted(btn):
@@ -245,9 +288,8 @@ class Onboarding(QWidget):
     # -- step 3: model download --
     def _build_download(self):
         w, lay = self._page()
-        self._title(lay, "Downloading speech model",
-                    "One time only, about 150 MB. After this, SpeechTyper "
-                    "works fully offline.")
+        self._title(lay, "Setting up the speech engine",
+                    "One-time download, about 150 MB.")
         lay.addSpacing(28)
         self._bar = QProgressBar()
         self._bar.setRange(0, 100)
@@ -338,5 +380,7 @@ class Onboarding(QWidget):
         return self.isVisible() and self._step == 4
 
     def _finish(self):
-        self.finished.emit(self.email)
+        # close BEFORE emitting: listeners check "is onboarding visible"
+        # to decide whether the main window may open
         self.close()
+        self.finished.emit(self.email)

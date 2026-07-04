@@ -1,7 +1,17 @@
 # Launch checklist
 
 Everything code-side is done. What's left are **accounts only you can
-create**. In order, fastest first — steps 1–4 get you selling today.
+create**. In order, fastest first — steps 0–4 get you selling today.
+
+## 0. Speech API key — customers dictate through YOUR key (~10 min)
+
+1. https://platform.openai.com → create an API key, add a few dollars of
+   credit, and **set a monthly usage limit** so a hot customer can't
+   surprise you (whisper-1 is ~$0.006/min of audio).
+2. Paste it into `OWNER_API_KEY` in `speechtyper/cloud.py`, rebuild.
+3. Know the trade-off: a key inside the app can be extracted by a
+   determined user. Fine for early days with a usage cap; before scaling,
+   ask me to move it behind a Firebase Function proxy (needs step 3).
 
 ## 1. Stripe — collect money (~30 min) ⚡ do this first
 

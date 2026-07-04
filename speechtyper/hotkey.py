@@ -30,10 +30,36 @@ def request_accessibility_permission() -> bool:
         return False
 
 
+# platform-correct names for modifier keys (macOS symbols vs PC names)
+_MAC_NAMES = {
+    "alt": "Option (⌥)", "alt_l": "Left Option (⌥)",
+    "alt_r": "Right Option (⌥)", "alt_gr": "Right Option (⌥)",
+    "cmd": "Command (⌘)", "cmd_l": "Left Command (⌘)",
+    "cmd_r": "Right Command (⌘)",
+    "ctrl": "Control (⌃)", "ctrl_l": "Left Control (⌃)",
+    "ctrl_r": "Right Control (⌃)",
+    "shift": "Shift (⇧)", "shift_l": "Left Shift (⇧)",
+    "shift_r": "Right Shift (⇧)",
+}
+
+
+def label_for_spec(spec: str) -> str:
+    """Human label for a stored hotkey spec, platform-aware."""
+    if not spec:
+        return "Unknown"
+    if spec.startswith("vk:"):
+        return f"Key code {spec[3:]}"
+    if sys.platform == "darwin" and spec in _MAC_NAMES:
+        return _MAC_NAMES[spec]
+    if len(spec) == 1:
+        return f"'{spec}'"
+    return spec.replace("_", " ").title()
+
+
 def key_to_spec(key) -> tuple[str, str]:
     """Return (spec, human label) for a pynput key event."""
     if isinstance(key, keyboard.Key):
-        return key.name, key.name.replace("_", " ").title()
+        return key.name, label_for_spec(key.name)
     if isinstance(key, keyboard.KeyCode):
         if key.char:
             return key.char, f"'{key.char}'"

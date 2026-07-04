@@ -11,7 +11,7 @@ import time
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from . import config, dictionary, history, sounds, translate
+from . import cloud, config, dictionary, history, sounds, translate
 from .account import Account
 from .formatter import format_text
 from .hotkey import (HotkeyListener, accessibility_is_granted,
@@ -104,6 +104,26 @@ class App:
         self.window.raise_()
         self.window.activateWindow()
 
+    def start_onboarding(self):
+        """Show the setup wizard (first run, redo-setup, or after sign-out)."""
+        if self.onboarding and self.onboarding.isVisible():
+            self.onboarding.raise_()
+            return
+        self.window.hide()
+        self.onboarding = Onboarding(self.cfg, self)
+        self.onboarding.finished.connect(self._onboarding_done)
+        self.onboarding.show()
+        self.onboarding.raise_()
+        self.onboarding.activateWindow()
+
+    def sign_out(self):
+        self.account.sign_out()
+        self.start_onboarding()
+
+    def notify_accessibility_granted(self):
+        """Called by onboarding the moment the Accessibility switch flips."""
+        self._poll_accessibility()
+
     # ---- push-to-talk flow (Qt main thread via queue) ----
     def _poll(self):
         try:
@@ -151,14 +171,24 @@ class App:
         prompt = dictionary.build_prompt(entries)
         translating = self.cfg.get("translate_enabled", False)
         target = self.cfg.get("target_lang", "es")
-        # target English → Whisper translates natively, free and offline
+        # target English → Whisper translates natively (both engines support it)
         task = "translate" if translating and target == "en" else "transcribe"
+        use_cloud = self._use_cloud()
 
         def work():
             translated_to = None
             try:
-                raw = self.transcriber.transcribe(
-                    audio, langs, initial_prompt=prompt, task=task)
+                raw = None
+                if use_cloud:
+                    try:
+                        raw = cloud.transcribe(
+                            audio, langs, initial_prompt=prompt, task=task,
+                            cfg=self.cfg)
+                    except Exception:
+                        raw = None  # offline/API hiccup → local fallback
+                if raw is None:
+                    raw = self.transcriber.transcribe(
+                        audio, langs, initial_prompt=prompt, task=task)
                 raw = dictionary.apply_post_pass(raw, entries)
                 text = format_text(raw, mode)
                 if translating and target == "en":
@@ -194,6 +224,14 @@ class App:
         if deliver(text):
             if self.cfg.get("history_enabled", True):
                 history.add(text.strip(), translated_to)
+
+    def _use_cloud(self) -> bool:
+        """Cloud is the customer engine; local is the admin option/fallback."""
+        if not cloud.configured(self.cfg):
+            return False
+        if self.account.is_admin:
+            return self.cfg.get("engine", "cloud") == "cloud"
+        return True
 
     def _allowed(self) -> bool:
         if self._on_try_step():
@@ -237,9 +275,7 @@ class App:
         except Exception:
             pass
         if not self.cfg.get("onboarded") or not self.account.signed_in:
-            self.onboarding = Onboarding(self.cfg, self)
-            self.onboarding.finished.connect(self._onboarding_done)
-            self.onboarding.show()
+            self.start_onboarding()
         else:
             self._open_window()
         if self._waiting_for_accessibility:

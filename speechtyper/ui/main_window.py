@@ -50,6 +50,21 @@ class ClickRow(QWidget):
         self._on_click()
 
 
+class CurrentSizeStack(QStackedWidget):
+    """A stack whose size hint follows the *current* page only. The default
+    QStackedWidget sizes itself to the largest page ever shown, which left
+    short views (home, account) with a slab of dead space after visiting
+    settings."""
+
+    def sizeHint(self):
+        w = self.currentWidget()
+        return w.sizeHint() if w else super().sizeHint()
+
+    def minimumSizeHint(self):
+        w = self.currentWidget()
+        return w.minimumSizeHint() if w else super().minimumSizeHint()
+
+
 class MainWindow(QWidget):
     def __init__(self, cfg, account, ctrl):
         """ctrl: object with save_cfg(cfg), learn_key(cb), list_devices(),
@@ -60,7 +75,8 @@ class MainWindow(QWidget):
         self.ctrl = ctrl
 
         self.setWindowTitle("SpeechTyper")
-        self.setFixedWidth(400)
+        self.setMinimumWidth(400)
+        self.resize(400, 0)
         self.setStyleSheet(f"background: {theme.BG};")
 
         root = QVBoxLayout(self)
@@ -90,7 +106,7 @@ class MainWindow(QWidget):
         root.addWidget(head)
         root.addWidget(divider())
 
-        self.stack = QStackedWidget()
+        self.stack = CurrentSizeStack()
         self.stack.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         root.addWidget(self.stack, 1)
 
@@ -123,8 +139,13 @@ class MainWindow(QWidget):
         # rebuild dynamic views so they always reflect current state
         if name in ("home", "dictionary", "history", "settings", "account"):
             getattr(self, f"_fill_{name}")()
-        self.stack.setCurrentWidget(self._views[name])
-        self.adjustSize()
+        current = self._views[name]
+        self.stack.setCurrentWidget(current)
+        self.stack.updateGeometry()
+        self.layout().invalidate()
+        self.layout().activate()
+        # keep the user's chosen width; height always fits the view
+        self.resize(self.width(), self.layout().sizeHint().height())
 
     def _back_header(self, lay, title):
         row = QHBoxLayout()
@@ -139,19 +160,19 @@ class MainWindow(QWidget):
     def _clear(self, widget):
         old = widget.layout()
         if old is not None:
-            while old.count():
-                item = old.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-                elif item.layout():
-                    self._clear_layout(item.layout())
+            self._clear_layout(old)
             QWidget().setLayout(old)
 
     def _clear_layout(self, lay):
         while lay.count():
             item = lay.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w is not None:
+                # detach NOW — deleteLater alone leaves the old widgets
+                # painted on top of the rebuilt view until the event loop
+                # gets around to deleting them (visible ghosting)
+                w.setParent(None)
+                w.deleteLater()
             elif item.layout():
                 self._clear_layout(item.layout())
 
@@ -505,6 +526,23 @@ class MainWindow(QWidget):
         acc.changed.connect(self._set_model)
         lay.addWidget(acc)
 
+        # engine (admin only — customers always use the cloud API)
+        if self.account.is_admin:
+            lay.addSpacing(16)
+            lay.addWidget(divider())
+            lay.addSpacing(16)
+            lay.addWidget(section_label("Engine (admin only)"))
+            lay.addSpacing(8)
+            eng = Segmented(["Cloud API", "Local"],
+                            0 if self.cfg.get("engine", "cloud") == "cloud"
+                            else 1)
+            eng.changed.connect(self._set_engine)
+            lay.addWidget(eng)
+            lay.addSpacing(6)
+            lay.addWidget(label("Customers only ever use the cloud API. "
+                                "Local runs on this machine.",
+                                12, theme.TEXT_MUTED, wrap=True))
+
         # mute toggle
         lay.addSpacing(14)
         lay.addWidget(divider())
@@ -521,6 +559,15 @@ class MainWindow(QWidget):
         lay.addWidget(label(
             "Closing this window keeps SpeechTyper running in the tray. "
             "Quit from the tray icon.", 12, theme.TEXT_MUTED, wrap=True))
+        lay.addSpacing(12)
+        lay.addWidget(divider())
+        redo_row = QHBoxLayout()
+        redo_row.setContentsMargins(0, 12, 0, 0)
+        redo = LinkLabel("Redo setup tutorial", theme.ACCENT, 13, 500)
+        redo.clicked.connect(self._redo_setup)
+        redo_row.addWidget(redo)
+        redo_row.addStretch(1)
+        lay.addLayout(redo_row)
         lay.addSpacing(6)
         lay.addStretch(1)
 
@@ -552,6 +599,14 @@ class MainWindow(QWidget):
     def _set_mode(self, i):
         self.cfg["mode"] = "normal" if i == 0 else "casual"
         self.save()
+
+    def _set_engine(self, i):
+        self.cfg["engine"] = "cloud" if i == 0 else "local"
+        self.save()
+
+    def _redo_setup(self):
+        self.hide()
+        self.ctrl.start_onboarding()
 
     def _set_model(self, i):
         self.cfg["model"] = "base" if i == 0 else "small"
@@ -594,6 +649,9 @@ class MainWindow(QWidget):
                             13, theme.ACCENT if a.is_admin else theme.GREEN))
         head.addLayout(col)
         head.addStretch(1)
+        sign_out = LinkLabel("Sign out", theme.TEXT_MUTED, 13, 500)
+        sign_out.clicked.connect(self._sign_out)
+        head.addWidget(sign_out)
         lay.addLayout(head)
         lay.addWidget(divider())
 
@@ -620,9 +678,10 @@ class MainWindow(QWidget):
             tag = ("CURRENT — TRIAL" if on_trial and trial else
                    "CURRENT" if a.plan == "pro" else "")
             yearly = QLabel(
-                (f"<div style='font-size:11px; font-weight:600; color:#fff;"
-                 f" background:{theme.ACCENT}; display:inline;'>&nbsp;{tag}&nbsp;"
-                 "</div>" if tag and a.plan != "lifetime" else "") +
+                (f"<table cellpadding='2'><tr><td bgcolor='{theme.ACCENT}'"
+                 " style='font-size:10px; font-weight:700; color:#ffffff;'>"
+                 f"&nbsp;{tag}&nbsp;</td></tr></table>"
+                 if tag and a.plan != "lifetime" else "") +
                 "<table width='100%'><tr>"
                 "<td style='font-size:15px; font-weight:600;'>Pro — yearly</td>"
                 "<td align='right' style='font-size:15px; font-weight:600;'>"
@@ -667,6 +726,10 @@ class MainWindow(QWidget):
                 note.setAlignment(Qt.AlignCenter)
                 lay.addWidget(note)
         lay.addStretch(1)
+
+    def _sign_out(self):
+        self.hide()
+        self.ctrl.sign_out()
 
     # closing hides to tray (existing behavior)
     def closeEvent(self, ev):

@@ -1,8 +1,11 @@
 # SpeechTyper v2
 
-Hold a key, speak, release — your words are typed into any app. Fully
-offline dictation (faster-whisper), now with a professional Qt UI,
-onboarding, translation, custom dictionary, history, and licensing.
+Hold a key, speak, release — your words are typed into any app.
+Customer dictation runs through an owner-funded cloud speech API
+(OpenAI-compatible, see `speechtyper/cloud.py`); a local faster-whisper
+engine is the admin option and the silent fallback when the network is
+down. Qt UI, onboarding, translation, custom dictionary, history, and
+licensing included.
 
 ## Run it
 
@@ -51,6 +54,12 @@ access, billing hidden. Any other email starts a 7-day trial.
 - **Restyled pill overlay** — 220×52, click-through, never steals focus.
 
 ## Owner setup (to actually charge money)
+
+0. **Cloud speech API** — put your API key in `OWNER_API_KEY` in
+   `speechtyper/cloud.py` (or export `SPEECHTYPER_CLOUD_KEY`). Customers
+   always transcribe through this key; the admin account can switch
+   Cloud/Local in Settings. Before wide release, move the key behind a
+   small proxy (see the note in `cloud.py`).
 
 Placeholders live in `speechtyper/account.py`:
 

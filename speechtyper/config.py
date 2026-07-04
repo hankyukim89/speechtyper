@@ -16,6 +16,10 @@ DEFAULTS = {
     "input_device_name": "System default",
     "mute_while_listening": False,
     # v2
+    "engine": "cloud",           # admin-only choice: "cloud" | "local";
+                                 # non-admin users always use cloud when a
+                                 # key is configured (local as fallback)
+    "cloud_api_key": "",         # optional per-install override
     "translate_enabled": False,
     "target_lang": "es",         # ISO code of the "Type in" language
     "dictionary": [],            # [{"word": str, "hint": str}]
@@ -80,6 +84,11 @@ LANG_NAMES = dict(LANGUAGES)
 
 
 def config_dir() -> Path:
+    override = os.environ.get("SPEECHTYPER_CONFIG_DIR")
+    if override:
+        d = Path(override)
+        d.mkdir(parents=True, exist_ok=True)
+        return d
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA", str(Path.home())))
     else:
@@ -101,6 +110,15 @@ def load() -> dict:
             cfg.update(json.loads(p.read_text(encoding="utf-8")))
         except Exception:
             pass
+    # normalize the hotkey label: old saves used PC names ("Ctrl") on macOS
+    try:
+        from .hotkey import label_for_spec
+
+        spec = cfg.get("hotkey", "")
+        if spec and not spec.startswith("vk:") and len(spec) > 1:
+            cfg["hotkey_label"] = label_for_spec(spec)
+    except Exception:
+        pass
     return cfg
 
 
